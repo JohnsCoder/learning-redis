@@ -29,10 +29,11 @@ export class UsuariosService {
   }
 
   async getRacaCor(Authorization: string) {
-    const redisData = await this.redis.get('racacor');
+    let redisDataList = await this.redis.lrange('racacor', 0, 99999999999999);
 
-    if (redisData) {
-      return JSON.parse(redisData);
+    if (redisDataList) {
+      redisDataList = redisDataList.map(data => JSON.parse(data))
+      return redisDataList;
     }
 
     const apiData = await lastValueFrom(
@@ -40,14 +41,17 @@ export class UsuariosService {
         headers: { Authorization },
       }),
     );
-    this.redis.set('racacor', JSON.stringify(apiData.data));
+    for(let item of apiData.data) {
+      this.redis.rpush('racacor', JSON.stringify(item))
+    }
     return apiData.data;
   }
-  async getEtnia(Authorization: string) {
-    const redisData = await this.redis.get('etnia');
 
-    if (redisData) {
-      return JSON.parse(redisData);
+  async getEtnia(Authorization: string) {
+    let redisDataList = await this.redis.lrange('etnia', 0, 99999999999999);
+    if (redisDataList) {
+      redisDataList = redisDataList.map(data => JSON.parse(data))
+      return JSON.parse(JSON.stringify(redisDataList));
     }
 
     const apiData = await lastValueFrom(
@@ -55,7 +59,9 @@ export class UsuariosService {
         headers: { Authorization },
       }),
     );
-    this.redis.set('etnia', JSON.stringify(apiData.data));
+    for(let item of apiData.data) {
+      this.redis.rpush('etnia', JSON.stringify(item))
+    }
     return apiData.data;
   }
 }
